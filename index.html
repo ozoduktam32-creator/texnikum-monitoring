@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kasbiy Ta'lim: Amaliyot Sifatini Nazorat Qilish Tizimi</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #3b82f6;
+      --success: #10b981;
+      --danger: #ef4444;
+      --dark: #0f172a;
+      --border: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    body {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #334155;
+    }
+
+    .sidebar {
+      width: 380px;
+      height: 100%;
+      background: #ffffff;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    }
+
+    .brand {
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+      color: white;
+    }
+
+    .brand h1 { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .brand p { font-size: 11px; opacity: 0.85; margin-top: 4px; }
+
+    .stats-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      padding: 10px 14px;
+      background: #f1f5f9;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-card {
+      background: white;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .stat-card .val { font-size: 18px; font-weight: 700; color: var(--primary); }
+    .stat-card .lbl { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+
+    .filters-bar {
+      padding: 10px 14px;
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filters-bar input, .filters-bar select {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .students-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 14px;
+    }
+
+    .student-item {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .student-item:hover {
+      border-color: var(--primary-light);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .student-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+
+    .student-name { font-size: 14px; font-weight: 600; color: var(--dark); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+
+    .badge-in { background: #dcfce7; color: #15803d; }
+    .badge-out { background: #fee2e2; color: #b91c1c; }
+    .badge-none { background: #f1f5f9; color: #64748b; }
+
+    .student-meta {
+      font-size: 12px;
+      color: #64748b;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .student-meta span { display: flex; align-items: center; gap: 6px; }
+
+    .sidebar-footer {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 75px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: #1e40af; }
+    .btn-outline { background: white; border: 1px solid var(--border); color: #334155; }
+    .btn-outline:hover { background: #f1f5f9; }
+
+    .map-container {
+      flex: 1;
+      height: 100vh;
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-box {
+      background: white;
+      border-radius: 12px;
+      width: 480px;
+      max-width: 90vw;
+      padding: 24px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+    }
+
+    .modal-box h2 { font-size: 18px; margin-bottom: 16px; color: var(--dark); }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: #475569; }
+    .form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+    .pulse-dot {
+      width: 14px;
+      height: 14px;
+      background: #10b981;
+      border: 2px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+      animation: pulse 2s infinite;
+    }
+
+    .pulse-dot.danger {
+      background: #ef4444;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="brand">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1><i class="bi bi-geo-alt-fill"></i> Sifat Nazorati</h1>
+        <a href="/login.html" title="Chiqish" style="color: white; font-size: 16px; text-decoration: none;">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
+      <p>Super Admin: Yozyovon tumani</p>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="val" id="totalCount">0</div>
+        <div class="lbl">Jami</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" style="color: var(--success);" id="insideCount">0</div>
+        <div class="lbl">Amaliyotda</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" style="color: var(--danger);" id="outsideCount">0</div>
+        <div class="lbl">Tashqarida</div>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <input type="text" id="searchInput" placeholder="F.I.SH yoki ID qidirish...">
+      <select id="groupFilter">
+        <option value="">Barcha guruhlar</option>
+      </select>
+    </div>
+
+    <div class="students-list" id="studentsList">
+      <div style="text-align: center; padding: 20px; color: #94a3b8;">
+        <i class="bi bi-arrow-repeat spin"></i> Ma'lumotlar yuklanmoqda...
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="btn btn-outline" onclick="openGroupsListModal()">
+        <i class="bi bi-people"></i> Guruhlar
+      </button>
+      <button class="btn btn-outline" onclick="openCompaniesListModal()">
+        <i class="bi bi-buildings"></i> Korxonalar
+      </button>
+      <button class="btn btn-outline" onclick="openStudentModal()">
+        <i class="bi bi-person-plus"></i> O'quvchi
+      </button>
+      <button class="btn btn-primary" onclick="downloadReport()" title="Excel hisobotni yuklash">
+        <i class="bi bi-file-earmark-excel"></i> Eksport
+      </button>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-container">
+    <div id="map"></div>
+  </div>
+
+  <!-- MODAL: GURUHLAR RO'YXATI -->
+  <div class="modal-backdrop" id="groupsListModal">
+    <div class="modal-box" style="width: 650px;">
+      <h2><i class="bi bi-people-fill"></i> Guruhlar va Rahbarlar Boshqaruvi</h2>
+      <div id="groupsListTable" style="max-height: 350px; overflow-y: auto; margin: 15px 0;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModals()">Yopish</button>
+        <button class="btn btn-primary" onclick="openAddGroupModal()"><i class="bi bi-plus-lg"></i> Yangi Guruh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GURUH QO'SHISH / TAHRIRLASH -->
+  <div class="modal-backdrop" id="groupEditModal">
+    <div class="modal-box">
+      <h2 id="grpModalTitle"><i class="bi bi-people"></i> Guruh Ma'lumotlari</h2>
+      <input type="hidden" id="editGrpId">
+      <div class="form-group">
+        <label>Guruh nomi</label>
+        <input type="text" id="grpName" placeholder="Masalan: 15.26 yoki AT-21">
+      </div>
+      <div class="form-group">
+        <label>Yo'nalish / Mutaxassislik</label>
+        <input type="text" id="grpDirection" placeholder="Masalan: Axborot texnologiyalari">
+      </div>
+      <div class="form-group">
+        <label>Guruh rahbari</label>
+        <select id="grpLeaderSelect"><option value="">Biriktirilmagan</option></select>
+      </div>
+      <div class="form-group">
+        <label>Amaliyot rahbari</label>
+        <select id="grpPracticeLeaderSelect"><option value="">Biriktirilmagan</option></select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModals()">Bekor qilish</button>
+        <button class="btn btn-primary" onclick="saveGroup()">Saqlash</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: KORXONA QO'SHISH / TAHRIRLASH -->
+  <div class="modal-backdrop" id="companyModal">
+    <div class="modal-box">
+      <h2 id="compModalTitle"><i class="bi bi-building"></i> Amaliyot Korxonasi</h2>
+      <input type="hidden" id="editCompId">
+      <div class="form-group">
+        <label>Korxona / Tashkilot nomi</label>
+        <input type="text" id="compName" placeholder="Masalan: 1-sonli Texnopark AJ">
+      </div>
+      <div class="form-group">
+        <label>Manzili</label>
+        <input type="text" id="compAddress" placeholder="Yozyovon tumani">
+      </div>
+      <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div>
+          <label>Kenglik (Latitude)</label>
+          <input type="number" step="any" id="compLat" placeholder="40.661900">
+        </div>
+        <div>
+          <label>Uzunlik (Longitude)</label>
+          <input type="number" step="any" id="compLng" placeholder="71.743100">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Ruxsat etilgan radius (metrlarda)</label>
+        <input type="number" id="compRadius" value="250">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModals()">Bekor qilish</button>
+        <button class="btn btn-primary" onclick="saveCompany()">Saqlash</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: O'QUVCHI QO'SHISH / TAHRIRLASH -->
+  <div class="modal-backdrop" id="studentModal">
+    <div class="modal-box">
+      <h2 id="studModalTitle"><i class="bi bi-person-badge"></i> O'quvchi Ma'lumotlari</h2>
+      <input type="hidden" id="editStudId">
+      <div class="form-group">
+        <label>O'quvchi ID / Login kodi</label>
+        <input type="text" id="studId" placeholder="Masalan: T-105">
+      </div>
+      <div class="form-group">
+        <label>Familiyasi, Ismi, Sharif</label>
+        <input type="text" id="studName" placeholder="F.I.SH">
+      </div>
+      <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div>
+          <label>Guruhi</label>
+          <input type="text" id="studGroup" placeholder="15.26">
+        </div>
+        <div>
+          <label>Telefon raqami</label>
+          <input type="text" id="studPhone" placeholder="+998901234567">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Doimiy yashash (Uy) manzili</label>
+        <input type="text" id="studHome" placeholder="Yozyovon t.">
+      </div>
+      <div class="form-group">
+        <label>Biriktirilgan amaliyot korxonasi</label>
+        <select id="studCompanySelect"><option value="">Tanlang...</option></select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModals()">Bekor qilish</button>
+        <button class="btn btn-primary" onclick="saveStudent()">Saqlash</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: KORXONALAR RO'YXATI -->
+  <div class="modal-backdrop" id="companiesListModal">
+    <div class="modal-box" style="width: 580px;">
+      <h2><i class="bi bi-buildings"></i> Amaliyot Korxonalari Boshqaruvi</h2>
+      <div id="companiesListTable" style="max-height: 350px; overflow-y: auto; margin: 15px 0;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModals()">Yopish</button>
+        <button class="btn btn-primary" onclick="openCompanyModal()"><i class="bi bi-plus-lg"></i> Yangi Korxona</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    let map = null;
+    let students = [];
+    let companies = [];
+    let studentMarkers = {};
+    let companyCircles = [];
+    let groupsList = [];
+    let staffList = [];
+
+    function initMap() {
+      if (map) return;
+      map = L.map('map').setView([40.6619, 71.7431], 14);
+
+      const googleStreets = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: '&copy; Google Maps'
+      }).addTo(map);
+
+      const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: '&copy; Google Maps Sun\'iy yo\'ldosh'
+      });
+
+      const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+      });
+
+      L.control.layers({
+        "Google Maps (Ko'cha)": googleStreets,
+        "Google Maps (Sun'iy yo'ldosh)": googleHybrid,
+        "OpenStreetMap": osm
+      }).addTo(map);
+
+      map.on('click', function(e) {
+        const latEl = document.getElementById('compLat');
+        const lngEl = document.getElementById('compLng');
+        if (latEl && lngEl) {
+          latEl.value = e.latlng.lat.toFixed(6);
+          lngEl.value = e.latlng.lng.toFixed(6);
+        }
+      });
+    }
+
+    async function loadData() {
+      try {
+        const [compRes, studRes] = await Promise.all([
+          fetch('/api/companies').then(r => r.json()),
+          fetch('/api/students').then(r => r.json())
+        ]);
+
+        if (compRes && compRes.success) {
+          companies = compRes.companies || [];
+          renderCompanies();
+          updateCompanyDropdown();
+        }
+
+        if (studRes && studRes.success) {
+          students = studRes.students || [];
+          renderStudents();
+          renderStudentMarkers();
+          updateStats();
+          updateGroupFilter();
+        }
+      } catch (err) {
+        console.error('Xatolik:', err);
+      }
+    }
+
+    function renderCompanies() {
+      if (!map) return;
+      companyCircles.forEach(c => map.removeLayer(c));
+      companyCircles = [];
+
+      companies.forEach(comp => {
+        const circle = L.circle([comp.latitude, comp.longitude], {
+          color: '#3b82f6',
+          fillColor: '#93c5fd',
+          fillOpacity: 0.25,
+          radius: comp.radius_meters || 200
+        }).addTo(map);
+
+        circle.bindPopup(`
+          <div style="font-size: 13px;">
+            <b style="color: #1e3a8a;">🏢 ${comp.name}</b><br>
+            <span style="color: #64748b;">${comp.address || ''}</span><br>
+            <b>Radius:</b> ${comp.radius_meters} metr
+          </div>
+        `);
+        companyCircles.push(circle);
+      });
+    }
+
+    function renderStudentMarkers() {
+      if (!map) return;
+      Object.values(studentMarkers).forEach(m => {
+        try { map.removeLayer(m); } catch(e){}
+      });
+      studentMarkers = {};
+
+      students.forEach(s => {
+        if (!s.last_lat || !s.last_lng) return;
+
+        const isInside = s.is_inside_zone === 1;
+        const color = isInside ? '#10b981' : '#ef4444';
+        const distText = s.distance_meters !== null && s.distance_meters !== undefined ? `${s.distance_meters}m` : '';
+
+        const customIcon = L.divIcon({
+          className: 'custom-pin',
+          html: `<div class="pulse-dot ${isInside ? '' : 'danger'}"></div>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        });
+
+        const marker = L.marker([s.last_lat, s.last_lng], { icon: customIcon }).addTo(map);
+        marker.bindPopup(`
+          <div style="font-size: 13px; line-height: 1.5;">
+            <b>👤 ${s.full_name}</b> (${s.group_name})<br>
+            <b>ID:</b> ${s.student_id}<br>
+            <b>Korxona:</b> ${s.company_name || 'Biriktirilmagan'}<br>
+            <b>Holat:</b> <span style="font-weight: 700; color: ${color};">
+              ${isInside ? 'Amaliyot hududida' : 'Hududdan tashqarida ' + distText}
+            </span><br>
+            <small style="color: #64748b;">So'nggi uzatish: ${s.last_seen ? new Date(s.last_seen).toLocaleTimeString('uz-UZ') : ''}</small>
+          </div>
+        `);
+
+        studentMarkers[s.id] = marker;
+      });
+    }
+
+    function renderStudents() {
+      const listEl = document.getElementById('studentsList');
+      if (!listEl) return;
+      const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+      const group = document.getElementById('groupFilter')?.value || '';
+
+      const filtered = students.filter(s => {
+        const nameMatch = (s.full_name || '').toLowerCase().includes(search);
+        const idMatch = (s.student_id || '').toLowerCase().includes(search);
+        const matchesGroup = !group || s.group_name === group;
+        return (nameMatch || idMatch) && matchesGroup;
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">O‘quvchi topilmadi</div>';
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(s => {
+        let badgeHtml = '<span class="badge badge-none"><i class="bi bi-clock"></i> Nomaʼlum</span>';
+        if (s.last_seen) {
+          const distStr = s.distance_meters !== null && s.distance_meters !== undefined ? ` (${s.distance_meters}m)` : '';
+          if (s.is_inside_zone === 1) {
+            badgeHtml = '<span class="badge badge-in"><i class="bi bi-check-circle-fill"></i> Amaliyotda</span>';
+          } else {
+            badgeHtml = `<span class="badge badge-out"><i class="bi bi-exclamation-triangle-fill"></i> Tashqarida${distStr}</span>`;
+          }
+        }
+
+        return `
+          <div class="student-item" onclick="focusStudent(${s.id}, ${s.last_lat}, ${s.last_lng})">
+            <div class="student-header">
+              <div>
+                <div class="student-name">${s.full_name}</div>
+                <small style="color: #64748b; font-size: 11px;">ID: ${s.student_id} | Guruhi: <b>${s.group_name}</b></small>
+              </div>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                ${badgeHtml}
+                <button onclick="event.stopPropagation(); editStudent(${s.id})" style="background: none; border: none; color: #3b82f6; cursor: pointer; padding: 4px;" title="Tahrirlash">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <button onclick="event.stopPropagation(); deleteStudent(${s.id}, '${s.full_name}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px;" title="O'chirish">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div class="student-meta">
+              <span><i class="bi bi-building"></i> <b>Amaliyot:</b> ${s.company_name || 'Biriktirilmagan'}</span>
+              ${s.home_address ? `<span><i class="bi bi-house-door"></i> <b>Uy:</b> ${s.home_address}</span>` : ''}
+              ${s.phone ? `<span><i class="bi bi-telephone"></i> <b>Tel:</b> ${s.phone}</span>` : ''}
+              ${s.last_seen ? `<span><i class="bi bi-clock-history"></i> So'nggi koordinata: ${new Date(s.last_seen).toLocaleTimeString('uz-UZ')}</span>` : '<span style="color: #94a3b8;"><i class="bi bi-geo"></i> Hali lokatsiya yubormagan</span>'}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function focusStudent(id, lat, lng) {
+      if (lat && lng && map) {
+        map.flyTo([lat, lng], 17);
+        if (studentMarkers[id]) studentMarkers[id].openPopup();
+      } else {
+        alert("O‘quvchi hali o‘z geolokatsiyasini serverga uzatmagan.");
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('totalCount').innerText = students.length;
+      const inside = students.filter(s => s.is_inside_zone === 1).length;
+      const outside = students.filter(s => s.is_inside_zone === 0 && s.last_seen).length;
+      document.getElementById('insideCount').innerText = inside;
+      document.getElementById('outsideCount').innerText = outside;
+    }
+
+    function updateGroupFilter() {
+      const groups = [...new Set(students.map(s => s.group_name))];
+      const select = document.getElementById('groupFilter');
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">Barcha guruhlar</option>' + 
+        groups.map(g => `<option value="${g}">${g}</option>`).join('');
+      select.value = currentVal;
+    }
+
+    function updateCompanyDropdown() {
+      const select = document.getElementById('studCompanySelect');
+      select.innerHTML = '<option value="">Tanlang...</option>' + 
+        companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    async function loadGroupsAndStaff() {
+      try {
+        const [gRes, sRes] = await Promise.all([
+          fetch('/api/groups').then(r => r.json()),
+          fetch('/api/staff').then(r => r.json())
+        ]);
+        if (gRes.success) groupsList = gRes.groups;
+        if (sRes.success) staffList = sRes.staff;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function openGroupsListModal() {
+      loadGroupsAndStaff().then(() => {
+        const tableDiv = document.getElementById('groupsListTable');
+        if (groupsList.length === 0) {
+          tableDiv.innerHTML = '<p style="color: #64748b; text-align: center;">Guruhlar kiritilmagan</p>';
+        } else {
+          tableDiv.innerHTML = `
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="background: #f1f5f9; text-align: left;">
+                  <th style="padding: 8px;">Guruh</th>
+                  <th style="padding: 8px;">Talabalar</th>
+                  <th style="padding: 8px;">Guruh rahbari</th>
+                  <th style="padding: 8px;">Amaliyot rahbari</th>
+                  <th style="padding: 8px; text-align: right;">Amallar</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${groupsList.map(g => `
+                  <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 8px;"><b>${g.name}</b><br><small style="color: #64748b;">${g.direction || ''}</small></td>
+                    <td style="padding: 8px;">${g.student_count || 0} nafar</td>
+                    <td style="padding: 8px;">${g.group_leader_name ? `<b>${g.group_leader_name}</b>` : '<span style="color: #94a3b8;">Biriktirilmagan</span>'}</td>
+                    <td style="padding: 8px;">${g.practice_leader_name ? `<b>${g.practice_leader_name}</b>` : '<span style="color: #94a3b8;">Biriktirilmagan</span>'}</td>
+                    <td style="padding: 8px; text-align: right;">
+                      <button onclick="editGroupModal(${g.id})" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="bi bi-pencil"></i></button>
+                      <button onclick="deleteGroup(${g.id}, '${g.name}')" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-left: 4px;"><i class="bi bi-trash"></i></button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+        document.getElementById('groupsListModal').style.display = 'flex';
+      });
+    }
+
+    function openAddGroupModal() {
+      closeModals();
+      document.getElementById('grpModalTitle').innerHTML = '<i class="bi bi-people"></i> Yangi Guruh Qo\'shish';
+      document.getElementById('editGrpId').value = '';
+      document.getElementById('grpName').value = '';
+      document.getElementById('grpDirection').value = '';
+      populateStaffDropdowns();
+      document.getElementById('groupEditModal').style.display = 'flex';
+    }
+
+    function editGroupModal(id) {
+      closeModals();
+      const g = groupsList.find(item => item.id === id);
+      if (!g) return;
+      document.getElementById('grpModalTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Guruhni Tahrirlash';
+      document.getElementById('editGrpId').value = g.id;
+      document.getElementById('grpName').value = g.name;
+      document.getElementById('grpDirection').value = g.direction || '';
+      populateStaffDropdowns(g.group_leader_id, g.practice_leader_id);
+      document.getElementById('groupEditModal').style.display = 'flex';
+    }
+
+    function populateStaffDropdowns(selLeader = null, selPractice = null) {
+      const gLeaders = staffList.filter(s => s.role === 'group_leader');
+      const pLeaders = staffList.filter(s => s.role === 'practice_leader');
+
+      const lSelect = document.getElementById('grpLeaderSelect');
+      lSelect.innerHTML = '<option value="">Biriktirilmagan</option>' + 
+        gLeaders.map(s => `<option value="${s.id}" ${s.id == selLeader ? 'selected' : ''}>${s.full_name}</option>`).join('');
+
+      const pSelect = document.getElementById('grpPracticeLeaderSelect');
+      pSelect.innerHTML = '<option value="">Biriktirilmagan</option>' + 
+        pLeaders.map(s => `<option value="${s.id}" ${s.id == selPractice ? 'selected' : ''}>${s.full_name}</option>`).join('');
+    }
+
+    async function saveGroup() {
+      const id = document.getElementById('editGrpId').value;
+      const name = document.getElementById('grpName').value.trim();
+      const direction = document.getElementById('grpDirection').value.trim();
+      const group_leader_id = document.getElementById('grpLeaderSelect').value || null;
+      const practice_leader_id = document.getElementById('grpPracticeLeaderSelect').value || null;
+
+      if (!name) return alert('Guruh nomini kiriting!');
+
+      const method = id ? 'PUT' : 'POST';
+      const body = { id: id ? parseInt(id) : undefined, name, direction, group_leader_id, practice_leader_id };
+
+      const res = await fetch('/api/groups', {
+        method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      }).then(r => r.json());
+
+      if (res.success) {
+        closeModals();
+        openGroupsListModal();
+        loadData();
+      } else {
+        alert(res.message);
+      }
+    }
+
+    async function deleteGroup(id, name) {
+      if (!confirm(`"${name}" guruhini o'chirmoqchimisiz?`)) return;
+      const res = await fetch(`/api/groups?id=${id}`, { method: 'DELETE' }).then(r => r.json());
+      if (res.success) {
+        openGroupsListModal();
+        loadData();
+      } else {
+        alert(res.message);
+      }
+    }
+
+    function openCompanyModal(comp = null) {
+      if (comp) {
+        document.getElementById('compModalTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Korxonani Tahrirlash';
+        document.getElementById('editCompId').value = comp.id;
+        document.getElementById('compName').value = comp.name;
+        document.getElementById('compAddress').value = comp.address || '';
+        document.getElementById('compLat').value = comp.latitude;
+        document.getElementById('compLng').value = comp.longitude;
+        document.getElementById('compRadius').value = comp.radius_meters || 200;
+      } else {
+        document.getElementById('compModalTitle').innerHTML = '<i class="bi bi-building"></i> Yangi Korxona';
+        document.getElementById('editCompId').value = '';
+        document.getElementById('compName').value = '';
+        document.getElementById('compAddress').value = '';
+        document.getElementById('compLat').value = '';
+        document.getElementById('compLng').value = '';
+        document.getElementById('compRadius').value = '250';
+      }
+      document.getElementById('companyModal').style.display = 'flex';
+    }
+
+    function openStudentModal(stud = null) {
+      updateCompanyDropdown();
+      if (stud) {
+        document.getElementById('studModalTitle').innerHTML = '<i class="bi bi-pencil-square"></i> O\'quvchini Tahrirlash';
+        document.getElementById('editStudId').value = stud.id;
+        document.getElementById('studId').value = stud.student_id;
+        document.getElementById('studId').disabled = true;
+        document.getElementById('studName').value = stud.full_name;
+        document.getElementById('studGroup').value = stud.group_name;
+        document.getElementById('studPhone').value = stud.phone || '';
+        document.getElementById('studHome').value = stud.home_address || '';
+        document.getElementById('studCompanySelect').value = stud.company_id || '';
+      } else {
+        document.getElementById('studModalTitle').innerHTML = '<i class="bi bi-person-badge"></i> Yangi O\'quvchi';
+        document.getElementById('editStudId').value = '';
+        document.getElementById('studId').value = '';
+        document.getElementById('studId').disabled = false;
+        document.getElementById('studName').value = '';
+        document.getElementById('studGroup').value = '';
+        document.getElementById('studPhone').value = '';
+        document.getElementById('studHome').value = '';
+        document.getElementById('studCompanySelect').value = '';
+      }
+      document.getElementById('studentModal').style.display = 'flex';
+    }
+
+    function editStudent(id) {
+      const stud = students.find(s => s.id === id);
+      if (stud) openStudentModal(stud);
+    }
+
+    function openCompaniesListModal() {
+      const tableDiv = document.getElementById('companiesListTable');
+      if (companies.length === 0) {
+        tableDiv.innerHTML = '<p style="color: #64748b; text-align: center;">Korxonalar mavjud emas</p>';
+      } else {
+        tableDiv.innerHTML = `
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+              <tr style="background: #f1f5f9; text-align: left;">
+                <th style="padding: 8px;">Korxona nomi</th>
+                <th style="padding: 8px;">Radius</th>
+                <th style="padding: 8px; text-align: right;">Amallar</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${companies.map(c => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px;"><b>${c.name}</b><br><small style="color: #64748b;">${c.address || ''}</small></td>
+                  <td style="padding: 8px;">${c.radius_meters}m</td>
+                  <td style="padding: 8px; text-align: right;">
+                    <button onclick="editCompany(${c.id})" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="bi bi-pencil"></i></button>
+                    <button onclick="deleteCompany(${c.id}, '${c.name}')" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-left: 4px;"><i class="bi bi-trash"></i></button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+      document.getElementById('companiesListModal').style.display = 'flex';
+    }
+
+    function editCompany(id) {
+      const comp = companies.find(c => c.id === id);
+      if (comp) {
+        closeModals();
+        openCompanyModal(comp);
+      }
+    }
+
+    async function deleteCompany(id, name) {
+      if (!confirm(`"${name}" korxonasini o'chirmoqchimisiz?`)) return;
+      const res = await fetch(`/api/companies?id=${id}`, { method: 'DELETE' }).then(r => r.json());
+      if (res.success) {
+        await loadData();
+        openCompaniesListModal();
+      } else {
+        alert(res.message);
+      }
+    }
+
+    function closeModals() {
+      document.getElementById('companyModal').style.display = 'none';
+      document.getElementById('studentModal').style.display = 'none';
+      document.getElementById('companiesListModal').style.display = 'none';
+      document.getElementById('groupsListModal').style.display = 'none';
+      document.getElementById('groupEditModal').style.display = 'none';
+    }
+
+    async function saveCompany() {
+      const id = document.getElementById('editCompId').value;
+      const name = document.getElementById('compName').value;
+      const address = document.getElementById('compAddress').value;
+      const latitude = document.getElementById('compLat').value;
+      const longitude = document.getElementById('compLng').value;
+      const radius_meters = document.getElementById('compRadius').value;
+
+      if (!name || !latitude || !longitude) return alert("Korxona nomi va koordinatalarni to'ldiring!");
+
+      const method = id ? 'PUT' : 'POST';
+      const bodyData = { id: id ? parseInt(id) : undefined, name, address, latitude, longitude, radius_meters };
+
+      const res = await fetch('/api/companies', {
+        method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(bodyData)
+      }).then(r => r.json());
+
+      if (res.success) {
+        closeModals();
+        loadData();
+      } else {
+        alert(res.message);
+      }
+    }
+
+    async function saveStudent() {
+      const id = document.getElementById('editStudId').value;
+      const student_id = document.getElementById('studId').value;
+      const full_name = document.getElementById('studName').value;
+      const group_name = document.getElementById('studGroup').value;
+      const phone = document.getElementById('studPhone').value;
+      const home_address = document.getElementById('studHome').value;
+      const company_id = document.getElementById('studCompanySelect').value;
+
+      if (!full_name || !group_name) return alert("F.I.SH va guruhini to'ldiring!");
+
+      const method = id ? 'PUT' : 'POST';
+      const bodyData = {
+        id: id ? parseInt(id) : undefined,
+        student_id,
+        full_name,
+        group_name,
+        phone,
+        home_address,
+        company_id: company_id ? parseInt(company_id) : null
+      };
+
+      const res = await fetch('/api/students', {
+        method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(bodyData)
+      }).then(r => r.json());
+
+      if (res.success) {
+        closeModals();
+        loadData();
+      } else {
+        alert(res.message);
+      }
+    }
+
+    async function deleteStudent(id, name) {
+      if (!confirm(`"${name}" o'quvchisini o'chirmoqchimisiz?`)) return;
+      const res = await fetch(`/api/students?id=${id}`, { method: 'DELETE' }).then(r => r.json());
+      if (res.success) {
+        loadData();
+      } else {
+        alert(res.message);
+      }
+    }
+
+    function downloadReport() {
+      window.location.href = '/api/export-csv';
+    }
+
+    // Window Load
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      loadData();
+      loadGroupsAndStaff();
+
+      document.getElementById('searchInput')?.addEventListener('input', renderStudents);
+      document.getElementById('groupFilter')?.addEventListener('change', renderStudents);
+
+      setInterval(loadData, 15000);
+    });
+  </script>
+</body>
+</html>

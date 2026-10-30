@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Amaliyot Nazorati - O'quvchi Kabineti</title>
+  
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      background: #eff6ff;
+      color: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .profile-info h3 {
+      font-size: 16px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .profile-info p {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .status-active {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .status-warning {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .status-waiting {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 13px;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: #64748b;
+    }
+
+    .info-value {
+      font-weight: 600;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-stop {
+      background: #f1f5f9;
+      color: #dc2626;
+      border: 1px solid #e2e8f0;
+      margin-top: 10px;
+    }
+
+    .login-box {
+      margin-top: 10px;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+
+    .login-box input:focus {
+      border-color: var(--primary);
+    }
+
+    .pulse-animation {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- KIRISH / IDENTIFIKATSIYA -->
+  <div class="card" id="loginCard">
+    <div style="text-align: center; margin-bottom: 16px;">
+      <i class="bi bi-geo-alt-fill" style="font-size: 40px; color: var(--primary);"></i>
+      <h2 style="font-size: 18px; margin-top: 8px;">Amaliyot Monitoringi</h2>
+      <p style="font-size: 12px; color: #64748b;">Kasbiy ta'lim amaliyot sifatini nazorat qilish</p>
+    </div>
+
+    <div class="login-box">
+      <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">
+        O'quvchi ID raqami (Talabalik ID)
+      </label>
+      <input type="text" id="studentIdInput" placeholder="Masalan: T-101" autofocus>
+      <button class="btn btn-primary" onclick="loginStudent()">
+        <i class="bi bi-box-arrow-in-right"></i> Tizimga kirish
+      </button>
+      <p style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 12px;">
+        (Namunaviy ID lar: T-101, T-102, T-103, T-104)
+      </p>
+    </div>
+  </div>
+
+  <!-- ASOSIY KUZATUV PANELI -->
+  <div id="mainDashboard" style="display: none;">
+    <div class="card">
+      <div class="profile-header">
+        <div class="avatar"><i class="bi bi-person"></i></div>
+        <div class="profile-info">
+          <h3 id="dispName">-</h3>
+          <p><span id="dispGroup">-</span> | ID: <b id="dispId">-</b></p>
+        </div>
+      </div>
+
+      <div class="status-badge status-waiting" id="statusBadge">
+        <i class="bi bi-geo"></i>
+        <span id="statusText">Monitoring boshlanmagan</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label"><i class="bi bi-building"></i> Korxona:</span>
+        <span class="info-value" id="dispCompany">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label"><i class="bi bi-bullseye"></i> Masofa:</span>
+        <span class="info-value" id="dispDistance">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label"><i class="bi bi-clock-history"></i> So'nggi yangilanish:</span>
+        <span class="info-value" id="dispTime">-</span>
+      </div>
+    </div>
+
+    <!-- AMAL VA SOZLAMALAR -->
+    <button class="btn btn-primary" id="btnToggleTracking" onclick="toggleTracking()">
+      <i class="bi bi-play-circle-fill"></i> Amaliyotni Boshlash (Geolokatsiyani yoqish)
+    </button>
+    <button class="btn btn-stop" onclick="logoutStudent()">
+      <i class="bi bi-box-arrow-left"></i> Hisobdan chiqish
+    </button>
+  </div>
+
+  <script>
+    // Initialize Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.expand();
+    }
+
+    let currentStudent = null;
+    let watchId = null;
+    let timerInterval = null;
+    let isTracking = false;
+
+    // LocalStorage orqali avtomatik eslab qolish
+    const urlParams = new URLSearchParams(window.location.search);
+    const tgIdFromUrl = urlParams.get('tg_id');
+    const nameFromUrl = urlParams.get('name');
+    const groupFromUrl = urlParams.get('group');
+
+    if (tgIdFromUrl) {
+      currentStudent = {
+        student_id: 'TG-' + tgIdFromUrl,
+        telegram_user_id: tgIdFromUrl,
+        full_name: nameFromUrl || "Talaba",
+        group_name: groupFromUrl || "Guruh",
+        company_name: "Amaliyot joyi"
+      };
+      showDashboard();
+      // Avtomatik lokatsiya so'rash
+      setTimeout(startTracking, 500);
+    } else {
+      const savedId = localStorage.getItem('monitoring_student_id');
+      if (savedId) {
+        document.getElementById('studentIdInput').value = savedId;
+        loginStudent();
+      }
+    }
+
+    async function loginStudent() {
+      const studentId = document.getElementById('studentIdInput').value.trim();
+      if (!studentId) return alert("O'quvchi ID raqamini kiriting!");
+
+      try {
+        const res = await fetch('/api/students').then(r => r.json());
+        if (res.success) {
+          const student = res.students.find(s => s.student_id.toLowerCase() === studentId.toLowerCase());
+          if (student) {
+            currentStudent = student;
+            localStorage.setItem('monitoring_student_id', student.student_id);
+            showDashboard();
+          } else {
+            alert("Bunday ID li o'quvchi topilmadi! Iltimos, nazoratchi bilan bog'laning.");
+          }
+        }
+      } catch (err) {
+        alert("Server bilan aloqa yo'q: " + err.message);
+      }
+    }
+
+    function showDashboard() {
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('mainDashboard').style.display = 'block';
+
+      document.getElementById('dispName').innerText = currentStudent.full_name;
+      document.getElementById('dispGroup').innerText = currentStudent.group_name;
+      document.getElementById('dispId').innerText = currentStudent.student_id;
+      document.getElementById('dispCompany').innerText = currentStudent.company_name || 'Biriktirilmagan';
+    }
+
+    function logoutStudent() {
+      if (isTracking) stopTracking();
+      localStorage.removeItem('monitoring_student_id');
+      location.reload();
+    }
+
+    function toggleTracking() {
+      if (!isTracking) {
+        startTracking();
+      } else {
+        stopTracking();
+      }
+    }
+
+    function startTracking() {
+      if (!navigator.geolocation) {
+        return alert("Qurilmangizda geolokatsiya (GPS) qo'llab-quvvatlanmaydi.");
+      }
+
+      isTracking = true;
+      const btn = document.getElementById('btnToggleTracking');
+      btn.innerHTML = '<i class="bi bi-stop-circle-fill"></i> Monitoringni to\'xtatish';
+      btn.style.background = '#dc2626';
+
+      updateBadge('waiting', 'Geolokatsiya qidirilmoqda...');
+
+      // Birinchi koordinatani darhol olamiz
+      sendCurrentLocation();
+
+      // Har 30 soniyada yangilab turamiz (Haqiqiy foydalanishda 5-10 daqiqaga qo'yiladi)
+      timerInterval = setInterval(sendCurrentLocation, 30000);
+    }
+
+    function stopTracking() {
+      isTracking = false;
+      clearInterval(timerInterval);
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+
+      const btn = document.getElementById('btnToggleTracking');
+      btn.innerHTML = '<i class="bi bi-play-circle-fill"></i> Amaliyotni Boshlash (Geolokatsiyani yoqish)';
+      btn.style.background = '#2563eb';
+
+      updateBadge('waiting', 'Monitoring to\'xtatildi');
+    }
+
+    function sendCurrentLocation() {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+
+          try {
+            const res = await fetch('/api/location', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                student_id_code: currentStudent.student_id,
+                telegram_user_id: currentStudent.telegram_user_id,
+                latitude: lat,
+                longitude: lng,
+                accuracy: accuracy
+              })
+            }).then(r => r.json());
+
+            if (res.success) {
+              document.getElementById('dispTime').innerText = new Date().toLocaleTimeString('uz-UZ');
+              document.getElementById('dispDistance').innerText = res.distance_meters !== null ? `${res.distance_meters} metr` : 'Nomaʼlum';
+
+              if (res.is_inside_zone) {
+                updateBadge('active', 'Amaliyot hududidasiz (Tasdiqlandi)');
+              } else {
+                updateBadge('warning', `Hududdan tashqaridasiz (${res.distance_meters}m)`);
+              }
+            }
+          } catch (err) {
+            console.error('Lokatsiya jo\'natishda xatolik:', err);
+          }
+        },
+        (error) => {
+          console.error(error);
+          updateBadge('warning', 'GPS ruxsatnomasi berilmagan!');
+          alert("Iltimos, telefoningizda 'Joylashuv' (GPS) xizmatini yoqing va brauzerga ruxsat bering!");
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    function updateBadge(type, text) {
+      const badge = document.getElementById('statusBadge');
+      badge.className = 'status-badge status-' + type;
+      document.getElementById('statusText').innerText = text;
+    }
+  </script>
+</body>
+</html>
