@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Kirish</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .card {
+      background: white;
+      width: 100%;
+      max-width: 400px;
+      padding: 36px 30px;
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .icon {
+      width: 60px;
+      height: 60px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin: 0 auto 16px;
+    }
+    h2 { font-size: 22px; color: #0f172a; margin-bottom: 6px; }
+    p { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+    .form-group { text-align: left; margin-bottom: 16px; }
+    label { font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px; }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus { border-color: #2563eb; ring: 2px solid #93c5fd; }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: #1e3a8a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .alert {
+      padding: 10px;
+      border-radius: 8px;
+      background: #fee2e2;
+      color: #b91c1c;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="icon"><i class="bi bi-shield-lock-fill"></i></div>
+    <h2>Super Admin Kirish</h2>
+    <p>Yozyovon 1-son texnikumi amaliyot monitoringi</p>
+
+    <div class="alert" id="errorMsg">Login yoki parol noto'g'ri!</div>
+
+    <form onsubmit="return doLogin(event)">
+      <div class="form-group">
+        <label>Foydalanuvchi nomi (Login)</label>
+        <input type="text" id="username" value="superadmin" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Maxfiy parol</label>
+        <input type="password" id="password" value="yozyovon1" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn">
+        <i class="bi bi-box-arrow-in-right"></i> Tizimga Kirish
+      </button>
+    </form>
+  </div>
+
+  <script>
+    function doLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value.trim();
+
+      if (u === 'superadmin' && p === 'yozyovon1') {
+        localStorage.setItem('superadmin_auth', 'true');
+        sessionStorage.setItem('superadmin_auth', 'true');
+        // Cookie ham o'rnatamiz
+        document.cookie = "superadmin_auth=true; path=/; max-age=864000";
+        window.location.replace('/index.html');
+        return false;
+      } else {
+        document.getElementById('errorMsg').style.display = 'block';
+        return false;
+      }
+    }
+  </script>
+</body>
+</html>
