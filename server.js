@@ -5,7 +5,7 @@ const { DatabaseSync } = require('node:sqlite');
 
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'monitoring.db');
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'public')) ? path.join(__dirname, 'public') : __dirname;
 
 // --- DATABASE INITIALIZATION ---
 const db = new DatabaseSync(DB_FILE);
@@ -535,7 +535,14 @@ const server = http.createServer(async (req, res) => {
     // --- STATIC FILES SERVING ---
     let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
     if (!fs.existsSync(filePath)) {
+      // Fallback: Agar public papkasiz yuklangan bo'lsa
+      filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
+    }
+    if (!fs.existsSync(filePath)) {
       filePath = path.join(PUBLIC_DIR, 'index.html');
+      if (!fs.existsSync(filePath)) {
+        filePath = path.join(__dirname, 'index.html');
+      }
     }
 
     const ext = path.extname(filePath).toLowerCase();

@@ -6,8 +6,8 @@ const https = require('https');
 const http = require('http');
 
 const BOT_TOKEN = process.env.BOT_TOKEN || '8778762356:AAFQ31Cnt3kxRip_18dCaFEFn-HUTY8OdjI';
-const BASE_DOMAIN = process.env.WEBAPP_URL ? process.env.WEBAPP_URL.replace('/student.html', '') : 'https://selection-connecting-weed-learners.trycloudflare.com';
-const SERVER_API_URL = 'http://localhost:3000';
+const BASE_DOMAIN = process.env.RENDER_EXTERNAL_URL || 'https://texnikum-monitoring.onrender.com';
+const SERVER_API_URL = process.env.RENDER ? `http://localhost:${process.env.PORT || 10000}` : 'http://localhost:3000';
 
 const userSessions = {};
 
