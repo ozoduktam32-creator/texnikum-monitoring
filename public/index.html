@@ -768,6 +768,9 @@
     }
 
     function openCompanyModal(comp = null) {
+  // Ensure no other modal is open
+  closeModals();
+
       if (comp) {
         document.getElementById('compModalTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Korxonani Tahrirlash';
         document.getElementById('editCompId').value = comp.id;
